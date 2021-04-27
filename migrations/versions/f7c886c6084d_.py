@@ -19,9 +19,9 @@ depends_on = None
 def upgrade():
     op.create_table("user",
                     sa.Column("id", sa.Integer, primary_key=True, autoincrement=False),
-                    sa.Column("username", sa.String(100), nullable=False),
+                    sa.Column("login", sa.String(100), nullable=False),
                     sa.Column("email", sa.String(100), nullable=True),
-                    sa.Column("twitter", sa.String(20), nullable=True))
+                    sa.Column("twitter_username", sa.String(20), nullable=True))
 
 
 def downgrade():
