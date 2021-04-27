@@ -28,5 +28,5 @@ class User(BaseModel, BasicCrud):
     # WHY DON'T THIS WORK???????????????????
 
     @classmethod
-    def exists(cls, db_session: SESSION, index: int) -> Optional['User']:
+    def exists(cls, db_session: SESSION, index: int) -> 'bool':
         return db_session.query(cls).filter_by(id=index).first() is not None
