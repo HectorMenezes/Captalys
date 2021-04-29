@@ -46,11 +46,14 @@ def hi(username: str, from_local: Optional[bool] = False):
 @router.get('/{username}/{reponame}')
 def get_repo(username: str, reponame: str, save_data: bool, db: SESSION = Depends(get_con)):
     repo = ModelRepository.get_one_from_github(username=username, reponame=reponame)
-    try:
-        ModelUser.exists(db_session=db, index=repo.user)
-    except Exception as error:
-        print(error)
-    return '???????????????????????????????'
+    if repo.user_id is not None:
+        try:
+            ModelUser.exists(db_session=db, index=repo.user_id)
+            return 'works'
+        except Exception as error:
+            print(error)
+        return f'is not none but don work, {repo.user_id}'
+    return 'Is none'
 
 
 @router.delete('/{id}')
