@@ -14,7 +14,7 @@ class BaseProvider(ABC):
 
     @classmethod
     @abstractmethod
-    def get_repository(cls, username: str, reponame: str) -> Optional[Repository]:
+    def get_repository(cls, username: str, repository_name: str) -> Optional[Repository]:
         ...
 
     @classmethod

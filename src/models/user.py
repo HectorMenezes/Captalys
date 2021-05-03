@@ -23,8 +23,9 @@ class User(BaseModel, BasicCrud):
     repositories = relationship('Repository', back_populates="user")
 
     @classmethod
-    def get_user_by_id(cls, db_session: SESSION, index: int) -> Optional['User']:
-        return db_session.query(cls).filter_by(id=index).first()
+    def get_user_by_id(cls, db_session: SESSION,
+                       index: int, provider: ProviderType) -> Optional['User']:
+        return db_session.query(cls).filter_by(id=index, provider=provider).first()
 
     @classmethod
     def get_user_by_username(cls, db_session: SESSION, username: str) -> Optional['User']:

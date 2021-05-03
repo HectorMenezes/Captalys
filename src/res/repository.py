@@ -65,7 +65,7 @@ def get_repositories(username: str, repository_name: str, provider: ProviderType
                                        provider=provider)
     if save_data:
         user = Dealer.get_user(username=username, provider=provider)
-        if not ModelUser.get_user_by_id(db_session=data_base, index=user.id):
+        if not ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider):
             model_user = ModelUser(id=user.id,
                                    login=user.login,
                                    email=user.email,
@@ -98,7 +98,7 @@ def get_repositories(username: str, repository_name: str, provider: ProviderType
 @router.delete('delete/{username}')
 def delete_user(username: str, provider: ProviderType, data_base: SESSION = Depends(get_con)):
     user = Dealer.get_user(username=username, provider=provider)
-    user = ModelUser.get_user_by_id(db_session=data_base, index=user.id)
+    user = ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider)
     if user:
         user.delete(connection=data_base)
     return 'User deleted'
