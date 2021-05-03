@@ -1,7 +1,7 @@
 from typing import Tuple, Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 
 class BasicCrud:

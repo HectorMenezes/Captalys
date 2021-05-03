@@ -1,19 +1,19 @@
 from enum import Enum
 
-import sqlalchemy
 from alembic import command
 from alembic.config import Config
-from src.settings import database_dsn
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+from src.settings import database_dsn
 
 alembic_configuration = Config("alembic.ini")
 
 
 class MigrationType(Enum):
-    upgrade = 'upgrade'
-    downgrade = 'downgrade'
+    UPGRADE = 'upgrade'
+    DOWNGRADE = 'downgrade'
 
 
 def run_migration(migration_type: MigrationType, revision: str):

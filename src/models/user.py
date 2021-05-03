@@ -1,12 +1,16 @@
-from typing import List, Optional
+from enum import Enum
+from typing import Optional
 
-from sqlalchemy import Column, String, Integer, CHAR, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, String, Integer, Enum as AlchemyEnum
 from sqlalchemy.orm import relationship
 
+from src.models.base import BasicCrud
 from src.services.database import BaseModel, SESSION
 
-from src.models.base import BasicCrud
-import requests
+
+class ProviderType(Enum):
+    GITLAB = 'gitlab'
+    GITHUB = 'github'
 
 
 class User(BaseModel, BasicCrud):
@@ -15,18 +19,13 @@ class User(BaseModel, BasicCrud):
     login = Column(String(100), nullable=False)
     email = Column(String(100), nullable=True)
     twitter_username = Column(String(100), nullable=True)
+    provider = Column(AlchemyEnum(ProviderType), primary_key=True)
     repositories = relationship('Repository', back_populates="user")
 
     @classmethod
-    def create_from_git(cls, username: str) -> Optional['User']:
-        user_request = requests.get(f'https://api.github.com/users/{username}').json()
-        return User(id=user_request['id'],
-                    login=user_request['login'],
-                    twitter_username=user_request['twitter_username'],
-                    email=user_request['email'])
-
-    # WHY DON'T THIS WORK???????????????????
+    def get_user_by_id(cls, db_session: SESSION, index: int) -> Optional['User']:
+        return db_session.query(cls).filter_by(id=index).first()
 
     @classmethod
-    def exists(cls, db_session: SESSION, index: int) -> Optional['User']:
-        return db_session.query(cls).filter_by(id=index).first()
+    def get_user_by_username(cls, db_session: SESSION, username: str) -> Optional['User']:
+        return db_session.query(cls).filter_by(login=username).first()

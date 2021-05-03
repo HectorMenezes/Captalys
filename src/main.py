@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from src.res.repository import router as reporouter
 from src.services.database import run_migration, MigrationType
 
@@ -9,7 +10,4 @@ APP.include_router(router=reporouter, prefix='/repository', tags=['repositories'
 
 @APP.on_event('startup')
 def start_up():
-    try:
-        run_migration(MigrationType.upgrade, 'head')
-    except Exception as error:
-        print(error)
+    run_migration(MigrationType.UPGRADE, 'head')
