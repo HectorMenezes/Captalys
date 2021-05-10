@@ -30,13 +30,13 @@ def get_user(username: str, provider: ProviderType,
                                email=user.email,
                                twitter_username=user.twitter_username,
                                repos=names)
-
-    user = Dealer.get_user(username=username, provider=provider)
+    source = Dealer.get_provider(provider=provider)
+    user = source.get_user(username=username)
     if not user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
                             content='User not found remotely')
 
-    repositories = Dealer.get_all_repos(username=username, provider=provider)
+    repositories = source.get_all_repos(username=username)
     names = [repository.name for repository in repositories]
 
     return UserOutputRepos(id=user.id,
@@ -48,8 +48,9 @@ def get_user(username: str, provider: ProviderType,
 
 @router.get('/repos/{username}', status_code=status.HTTP_200_OK, response_model=List[Repository])
 def get_all_repositories(username: str, provider: ProviderType):
-    repositories = Dealer.get_all_repos(username=username,
-                                        provider=provider)
+    source = Dealer.get_provider(provider=provider)
+
+    repositories = source.get_all_repos(username=username)
     if not repositories:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
                             content='User not found in remotely')
@@ -60,11 +61,12 @@ def get_all_repositories(username: str, provider: ProviderType):
             response_model=Repository)
 def get_repositories(username: str, repository_name: str, provider: ProviderType,
                      save_data: bool, data_base: SESSION = Depends(get_con)):
-    repository = Dealer.get_repository(username=username,
-                                       repository_name=repository_name,
-                                       provider=provider)
+    source = Dealer.get_provider(provider=provider)
+
+    repository = source.get_repository(username=username,
+                                       repository_name=repository_name)
     if save_data:
-        user = Dealer.get_user(username=username, provider=provider)
+        user = source.get_user(username=username)
         if not ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider):
             model_user = ModelUser(id=user.id,
                                    login=user.login,
@@ -97,7 +99,8 @@ def get_repositories(username: str, repository_name: str, provider: ProviderType
 
 @router.delete('delete/{username}')
 def delete_user(username: str, provider: ProviderType, data_base: SESSION = Depends(get_con)):
-    user = Dealer.get_user(username=username, provider=provider)
+    source = Dealer.get_provider(provider=provider)
+    user = source.get_user(username=username)
     user = ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider)
     if user:
         user.delete(connection=data_base)
@@ -107,10 +110,12 @@ def delete_user(username: str, provider: ProviderType, data_base: SESSION = Depe
 @router.delete('delete/{username}/{repository_name}')
 def delete_repo(username: str, repository_name: str,
                 provider: ProviderType, data_base: SESSION = Depends(get_con)):
-    repository = Dealer.get_repository(username=username,
-                                       repository_name=repository_name,
-                                       provider=provider)
+    source = Dealer.get_provider(provider=provider)
+    repository = source.get_repository(username=username,
+                                       repository_name=repository_name)
     repository = ModelRepository.get_by_id(db_session=data_base, index=repository.id)
     if repository:
         repository.delete(connection=data_base)
     return 'Repository deleted'
+
+
