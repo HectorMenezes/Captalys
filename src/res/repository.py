@@ -6,7 +6,7 @@ from starlette.responses import JSONResponse
 
 from src.models.repository import Repository as ModelRepository
 from src.models.user import ProviderType, User as ModelUser
-from src.providers.dealer import Dealer
+from src.providers.dealer import dealer
 from src.schemas.repository import Repository
 from src.schemas.user import UserOutputRepos
 from src.services.database import get_con, SESSION
@@ -19,6 +19,7 @@ def get_user(username: str, provider: ProviderType,
              from_local: Optional[bool] = False, data_base: SESSION = Depends(get_con)):
     if from_local:
         user = ModelUser.get_user_by_username(username=username, db_session=data_base)
+        # add provider
         if not user:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
                                 content='User not found in database')
@@ -30,7 +31,8 @@ def get_user(username: str, provider: ProviderType,
                                email=user.email,
                                twitter_username=user.twitter_username,
                                repos=names)
-    source = Dealer.get_provider(provider=provider)
+
+    source = dealer.get_provider(provider=provider)
     user = source.get_user(username=username)
     if not user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
@@ -48,9 +50,10 @@ def get_user(username: str, provider: ProviderType,
 
 @router.get('/repos/{username}', status_code=status.HTTP_200_OK, response_model=List[Repository])
 def get_all_repositories(username: str, provider: ProviderType):
-    source = Dealer.get_provider(provider=provider)
+    source = dealer.get_provider(provider=provider)
 
     repositories = source.get_all_repos(username=username)
+
     if not repositories:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
                             content='User not found in remotely')
@@ -59,12 +62,15 @@ def get_all_repositories(username: str, provider: ProviderType):
 
 @router.get('/{username}/{repository_name}', status_code=status.HTTP_200_OK,
             response_model=Repository)
-def get_repositories(username: str, repository_name: str, provider: ProviderType,
-                     save_data: bool, data_base: SESSION = Depends(get_con)):
-    source = Dealer.get_provider(provider=provider)
+def get_repository(username: str, repository_name: str, provider: ProviderType,
+                   save_data: bool, data_base: SESSION = Depends(get_con)):
+    source = dealer.get_provider(provider=provider)
 
     repository = source.get_repository(username=username,
                                        repository_name=repository_name)
+    if not repository:
+        return JSONResponse(status_code=404,
+                            content=dict(message='Repository not found'))
     if save_data:
         user = source.get_user(username=username)
         if not ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider):
@@ -90,27 +96,36 @@ def get_repositories(username: str, repository_name: str, provider: ProviderType
                                                stars=repository.stars,
                                                watchers=repository.watchers)
             status_repository, message = model_repository.save(connection=data_base)
-
             if not status_repository:
                 return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                     content=dict(message='Database error', details=message))
     return repository
 
 
-@router.delete('delete/{username}')
+@router.delete('/{username}')
 def delete_user(username: str, provider: ProviderType, data_base: SESSION = Depends(get_con)):
-    source = Dealer.get_provider(provider=provider)
+    source = dealer.get_provider(provider=provider)
     user = source.get_user(username=username)
     user = ModelUser.get_user_by_id(db_session=data_base, index=user.id, provider=provider)
-    if user:
-        user.delete(connection=data_base)
+
+    if not user:
+        return 'User deleted'
+
+    if ModelRepository.get_all_from_local(db_session=data_base, user_id=user.id):
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                            content=dict(message='Constraint violation'))
+    status_user, message = user.delete(connection=data_base)
+
+    if not status_user:
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content=dict(message='Database error', details=message))
     return 'User deleted'
 
 
-@router.delete('delete/{username}/{repository_name}')
+@router.delete('/{username}/{repository_name}')
 def delete_repo(username: str, repository_name: str,
                 provider: ProviderType, data_base: SESSION = Depends(get_con)):
-    source = Dealer.get_provider(provider=provider)
+    source = dealer.get_provider(provider=provider)
     repository = source.get_repository(username=username,
                                        repository_name=repository_name)
     repository = ModelRepository.get_by_id(db_session=data_base, index=repository.id)
@@ -119,3 +134,31 @@ def delete_repo(username: str, repository_name: str,
     return 'Repository deleted'
 
 
+# TODO patch
+# TODO 100% coverage of repository.py and base
+
+
+@router.patch('/{username}')
+def update_user(username: str, provider: ProviderType, data_base: SESSION = Depends(get_con)):
+    source = dealer.get_provider(provider=provider)
+    user = source.get_user(username=username)
+
+    if not user:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content=dict(message='User not found remotely'))
+
+    model_user = ModelUser.get_user_by_username(username=user.login, db_session=data_base)
+
+    if not model_user:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content=dict(message='User not found in database'))
+
+    status_user, message = model_user.update(connection=data_base,
+                                             email=user.email,
+                                             twitter_username=user.twitter_username)
+
+    if not status_user:
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content=dict(message='Database error', details=message))
+
+    return 'User updated successfully'

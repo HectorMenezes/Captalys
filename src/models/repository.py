@@ -24,7 +24,7 @@ class Repository(BaseModel, BasicCrud):
 
     @classmethod
     def get_all_from_local(cls, db_session: SESSION, user_id: int) -> List['Repository']:
-        return db_session.query(cls).filter_by(user_id=user_id)
+        return db_session.query(cls).filter_by(user_id=user_id).all()
 
     @classmethod
     def get_by_id(cls, db_session: SESSION, index: int) -> Optional['Repository']:

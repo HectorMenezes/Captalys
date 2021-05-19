@@ -10,4 +10,7 @@ APP.include_router(router=reporouter, prefix='/repository', tags=['repositories'
 
 @APP.on_event('startup')
 def start_up():
-    run_migration(MigrationType.UPGRADE, 'head')
+    try:
+        run_migration(MigrationType.UPGRADE, 'head')
+    except Exception as error:
+        print(error)

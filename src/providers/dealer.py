@@ -9,9 +9,12 @@ from src.schemas.user import UserOutput
 
 
 class Dealer:
+    def __init__(self):
+        self.providers = dict(gitlab=GitLab, github=GitHub)
 
-    @classmethod
-    def get_provider(cls, provider: ProviderType) -> Optional[BaseProvider]:
-        if provider == ProviderType.GITHUB:
-            return GitHub
-        return GitLab
+    def get_provider(self, provider: ProviderType) -> Optional[BaseProvider]:
+        return self.providers.get(provider.value)
+
+
+dealer = Dealer()
+

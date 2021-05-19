@@ -9,8 +9,8 @@ from src.services.database import BaseModel, SESSION
 
 
 class ProviderType(Enum):
-    GITLAB = 'gitlab'
-    GITHUB = 'github'
+    gitlab = 'gitlab'
+    github = 'github'
 
 
 class User(BaseModel, BasicCrud):

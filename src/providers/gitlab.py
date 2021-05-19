@@ -11,11 +11,19 @@ class GitLab(BaseProvider):
 
     @classmethod
     def get_user(cls, username: str) -> Optional[UserOutput]:
-        user = requests.get(f'https://gitlab.com/api/v4/users?username={username}')
-        user.raise_for_status()
-        user = user.json()[0]
-        return UserOutput(id=user['id'],
-                          login=user['username'])
+        try:
+            user = requests.get(f'https://gitlab.com/api/v4/users?username={username}')
+            user.raise_for_status()
+
+            user = user.json()
+            if not user:
+                return None
+            user = user[0]
+            return UserOutput(id=user['id'],
+                              login=user['username'])
+
+        except requests.exceptions.HTTPError:
+            return None
 
     @classmethod
     def get_repository(cls, username: str, repository_name: str) -> Optional[Repository]:

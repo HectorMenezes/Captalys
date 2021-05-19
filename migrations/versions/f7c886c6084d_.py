@@ -28,4 +28,5 @@ def upgrade():
 
 def downgrade():
     op.drop_table('user')
+    op.execute('drop type providertype')
     pass
